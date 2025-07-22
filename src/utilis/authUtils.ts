@@ -5,7 +5,6 @@ import { jwtDecode } from 'jwt-decode';
 // Helper to get the JWT token from the cookies
 export const getAuthToken = () => {
   if (typeof window !== 'undefined') {
-    // Extract JWT token from cookies
     const match = document.cookie.match(new RegExp('(^| )jwt=([^;]+)'));
     return match ? match[2] : null;
   }

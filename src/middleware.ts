@@ -1,49 +1,53 @@
-// src/middleware.ts
+// src/utils/authUtils.ts
 
-import { NextResponse } from 'next/server';
 import { jwtDecode } from 'jwt-decode';
-import { NextRequest } from 'next/server';
 
-export function middleware(req: NextRequest) {
-  const token = req.cookies.get('jwt');  
-
-  if (req.url.includes('/dashboard')) {
-    if (!token) {
-      console.log('token not found')
-      return NextResponse.redirect(new URL('/signin', req.url));
-     
-    }
-
-    try {
-
-      const decoded = jwtDecode<any>(token.value);
-      if (decoded.exp < Date.now() / 1000) {
-        return NextResponse.redirect(new URL('/signin', req.url));
-
-      }
-      if (decoded.role !== 'admin') {
-        console.log('not admin')
-        return NextResponse.redirect(new URL('/home', req.url));  
-        
-      }
-    } catch (err) {
-      console.log('invalid token')
-      return NextResponse.redirect(new URL('/signin', req.url));  
-   
+// Helper to get the JWT token from the cookies
+export const getAuthToken = () => {
+  if (typeof window !== 'undefined') {
+    const match = document.cookie.match(new RegExp('(^| )jwt=([^;]+)'));
+    if (match) {
+      console.log("JWT Token found in cookies:", match[2]);
+      return match[2];
+    } else {
+      console.log("No JWT token found in cookies");
     }
   }
+  console.log("Not in a browser environment");
+  return null;
+};
 
-  if (req.url.includes('/signin') || req.url.includes('/signup')) {
-    if (token) {
-      console.log('token is valid')
-      return NextResponse.redirect(new URL('/dashboard', req.url));  
-    }
+// Check if the user is authenticated
+export const isAuthenticated = () => {
+  const token = getAuthToken();
+  console.log("Token retrieved:", token);
+  if (!token) return false;
+
+  try {
+    const decodedToken = jwtDecode<any>(token);
+    console.log("Decoded token:", decodedToken);
+    const currentTime = Date.now() / 1000;
+    const isValid = decodedToken.exp > currentTime;
+    console.log("Token is valid:", isValid);
+    return isValid; // Check if token is not expired
+  } catch (error) {
+    console.error("Error decoding token:", error);
+    return false; // If there's an error decoding the token, it's invalid
   }
+};
 
-  return NextResponse.next();
-}
+// Get the role from the JWT token
+export const getRoleFromToken = () => {
+  const token = getAuthToken();
+  console.log("Token retrieved for role:", token);
+  if (!token) return null;
 
-// Define which routes should apply the middleware
-export const config = {
-  matcher: ['/dashboard', '/signin', '/signup'],
+  try {
+    const decodedToken = jwtDecode<any>(token);
+    console.log("Decoded token for role:", decodedToken);
+    return decodedToken?.role; // Return the user's role from the decoded token
+  } catch (error) {
+    console.error("Error decoding token for role:", error);
+    return null;
+  }
 };
