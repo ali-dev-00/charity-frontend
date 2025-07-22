@@ -10,6 +10,7 @@ export function middleware(req: NextRequest) {
   if (req.url.includes('/dashboard')) {
     if (!token) {
       return NextResponse.redirect(new URL('/signin', req.url));
+      console.log('token not found')
     }
 
     try {
@@ -17,17 +18,21 @@ export function middleware(req: NextRequest) {
       const decoded = jwtDecode<any>(token.value);
       if (decoded.exp < Date.now() / 1000) {
         return NextResponse.redirect(new URL('/signin', req.url));
+
       }
       if (decoded.role !== 'admin') {
         return NextResponse.redirect(new URL('/home', req.url));  
+        console.log('not admin')
       }
     } catch (err) {
-      return NextResponse.redirect(new URL('/signin', req.url));  // Invalid token
+      return NextResponse.redirect(new URL('/signin', req.url));  
+      console.log('invalid token')
     }
   }
 
   if (req.url.includes('/signin') || req.url.includes('/signup')) {
     if (token) {
+      console.log('token is valid')
       return NextResponse.redirect(new URL('/dashboard', req.url));  
     }
   }
