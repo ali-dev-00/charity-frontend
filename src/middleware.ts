@@ -9,8 +9,9 @@ export function middleware(req: NextRequest) {
 
   if (req.url.includes('/dashboard')) {
     if (!token) {
-      return NextResponse.redirect(new URL('/signin', req.url));
       console.log('token not found')
+      return NextResponse.redirect(new URL('/signin', req.url));
+     
     }
 
     try {
@@ -21,12 +22,14 @@ export function middleware(req: NextRequest) {
 
       }
       if (decoded.role !== 'admin') {
-        return NextResponse.redirect(new URL('/home', req.url));  
         console.log('not admin')
+        return NextResponse.redirect(new URL('/home', req.url));  
+        
       }
     } catch (err) {
-      return NextResponse.redirect(new URL('/signin', req.url));  
       console.log('invalid token')
+      return NextResponse.redirect(new URL('/signin', req.url));  
+   
     }
   }
 
