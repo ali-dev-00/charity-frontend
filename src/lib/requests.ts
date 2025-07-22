@@ -1,5 +1,3 @@
-
-
 import { env } from 'next-runtime-env';
 
 export type ServerResponse = {
@@ -21,14 +19,14 @@ const getHeaders = () => {
 // Helper for making API requests (GET, POST, PUT, DELETE)
 const apiRequest = async (
   urlPath: string,
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE',
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'OPTIONS',
   body?: Record<string, any> | FormData
 ): Promise<ServerResponse> => {
   const requestOptions: RequestInit = {
     method,
     headers: getHeaders(),
     body: body ? JSON.stringify(body) : undefined,
-    credentials: 'include', // Send cookies with each request
+    credentials: 'include', // Ensure cookies are sent with requests
   };
 
   // Handle FormData (for file uploads or other data types)
@@ -42,11 +40,11 @@ const apiRequest = async (
     const response = await fetch(`${backendUrl}/api/${urlPath}`, requestOptions);
     const result = await response.json();
 
+    // Handle 401 or 403 errors (Unauthorized or Forbidden)
     if (response.status === 401 || response.status === 403) {
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';  // Redirect to login if not authenticated
+      if (window.location.pathname !== '/signin') {
+        window.location.href = '/signin'; // Redirect to login if unauthorized
       }
-      localStorage.removeItem('token'); // Clear the token from localStorage
     }
 
     return result;
