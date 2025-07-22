@@ -1,0 +1,17 @@
+@import url('https://fonts.googleapis.com/css2?family=Pacifico&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Sora&display=swap');
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* Apply the font globally using Tailwind's base layer */
+@layer base {
+  body {
+    font-family: 'Sora', sans-serif;
+  }
+}
+
+/* Add the custom special-font class */
+.special-font {
+  font-family: 'Comic Sans MS', cursive, sans-serif;
+}
+
