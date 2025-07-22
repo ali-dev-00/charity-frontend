@@ -1,7 +1,5 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,48 +7,14 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { CalendarIcon, Upload, User } from "lucide-react"
-
-interface FormData {
-    profilePhoto: File | null 
-    batchYear: string
-    courseProgram: string
-    schoolName: string
-    degreeCertificate: string
-    passingYear: string
-    name: string
-    fatherName: string
-    cell_no: string
-    whatsappNo: string
-    email: string
-    Country: string
-    City: string
-    Province: string
-    dateOfBirth: string
-    maritalStatus: string
-    gender: string
-    permanentAddress: string
-    mailingAddress: string
-    institute: string
-    faculty: string
-    degree: string
-    designation: string
-    organization: string
-    location: string
-    hobbies: {
-        contentWriting: boolean
-        socialMedia: boolean
-        fundRaising: boolean
-        voiceOver: boolean
-        teacherTraining: boolean
-    }
-}
+import { Upload, User } from "lucide-react"
+import Toast from "@/app/components/common/toaster"
+import VolunteerService from "@/app/services/VolunteerService"
+import { VolunteerCreateRequest } from "@/app/services/types/volunteerTypes"
 
 export default function VolunteerRegistrationForm() {
-    const [formData, setFormData] = useState<FormData>({
+    const [formData, setFormData] = useState<VolunteerCreateRequest>({
         profilePhoto: null,
-        batchYear: "",
-        courseProgram: "",
         schoolName: "",
         degreeCertificate: "",
         passingYear: "",
@@ -70,8 +34,8 @@ export default function VolunteerRegistrationForm() {
         institute: "",
         faculty: "",
         degree: "",
-        organization: "",
         designation: "",
+        organization: "",
         location: "",
         hobbies: {
             contentWriting: false,
@@ -79,42 +43,126 @@ export default function VolunteerRegistrationForm() {
             fundRaising: false,
             voiceOver: false,
             teacherTraining: false,
+            otherHobby: "",
         },
     })
 
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null)
+    const [errors, setErrors] = useState<{ [key: string]: string }>({})
 
-    const handleInputChange = (field: keyof Omit<FormData, "hobbies">, value: string) => {
+    const handleInputChange = (field: keyof Omit<VolunteerCreateRequest, "hobbies" | "profilePhoto">, value: string) => {
         setFormData((prev) => ({
             ...prev,
             [field]: value,
         }))
     }
 
-    const handleHobbyChange = (hobby: keyof FormData["hobbies"], checked: boolean) => {
+    const handleHobbyChange = (hobby: keyof NonNullable<VolunteerCreateRequest["hobbies"]>, value: boolean | string) => {
         setFormData((prev) => ({
             ...prev,
             hobbies: {
-                ...prev.hobbies,
-                [hobby]: checked,
+                ...prev.hobbies!,
+                [hobby]: value,
             },
         }))
     }
 
+    const handleProfilePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files ? e.target.files[0] : null
+        setFormData((prev) => ({
+            ...prev,
+            profilePhoto: file,
+        }))
+    }
+
+    const validateForm = () => {
+        const newErrors: { [key: string]: string } = {}
+        if (!formData.name) newErrors.name = "Name is required"
+        if (!formData.email) newErrors.email = "Email is required"
+        if (!formData.cell_no) newErrors.cell_no = "Cell number is required"
+        if (!formData.schoolName) newErrors.schoolName = "School/College Name is required"
+        if (!formData.degreeCertificate) newErrors.degreeCertificate = "Degree/Certificate is required"
+        if (!formData.passingYear) newErrors.passingYear = "Passing Year is required"
+        if (!formData.fatherName) newErrors.fatherName = "Father's name is required"
+        if (!formData.Country) newErrors.Country = "Country is required"
+        if (!formData.City) newErrors.City = "City is required"
+        if (!formData.Province) newErrors.Province = "Province is required"
+        if (!formData.dateOfBirth) newErrors.dateOfBirth = "Date of Birth is required"
+        if (!formData.maritalStatus) newErrors.maritalStatus = "Marital Status is required"
+        if (!formData.gender) newErrors.gender = "Gender is required"
+        if (!formData.permanentAddress) newErrors.permanentAddress = "Permanent Address is required"
+        if (!formData.mailingAddress) newErrors.mailingAddress = "Mailing Address is required"
+        return newErrors
+    }
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
+        const validationErrors = validateForm()
+
+        if (Object.keys(validationErrors).length > 0) {
+            setErrors(validationErrors)
+            return
+        }
+
         setIsSubmitting(true)
+        setErrors({})  // Clear previous errors
 
-        // Simulate form submission
-        await new Promise((resolve) => setTimeout(resolve, 1000))
-
-        console.log("Form submitted:", formData)
-        alert("Registration submitted successfully!")
-        setIsSubmitting(false)
+        try {
+            const response = await VolunteerService.create(formData)
+            if (response.status) {
+                setToast({ message: "Volunteer created successfully", type: "success" })
+                setFormData({
+                    profilePhoto: null,
+                    schoolName: "",
+                    degreeCertificate: "",
+                    passingYear: "",
+                    name: "",
+                    fatherName: "",
+                    cell_no: "",
+                    whatsappNo: "",
+                    email: "",
+                    Country: "",
+                    City: "",
+                    Province: "",
+                    dateOfBirth: "",
+                    maritalStatus: "",
+                    gender: "",
+                    permanentAddress: "",
+                    mailingAddress: "",
+                    institute: "",
+                    faculty: "",
+                    degree: "",
+                    designation: "",
+                    organization: "",
+                    location: "",
+                    hobbies: {
+                        contentWriting: false,
+                        socialMedia: false,
+                        fundRaising: false,
+                        voiceOver: false,
+                        teacherTraining: false,
+                        otherHobby: "",
+                    },
+                })
+            }
+        } catch (error) {
+            setToast({ message: "Error creating volunteer. Please try again.", type: "error" })
+        } finally {
+            setIsSubmitting(false)
+        }
     }
 
     return (
         <div className="max-w-md sm:max-w-xl mx-auto px-4">
+            {toast && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() => setToast(null)}
+                />
+            )}
+
             <Card className=" border-none shadow-none">
                 <CardHeader className="w-full text-center">
                     <CardTitle className="text-2xl text-center font-bold text-gray-800 p-0">Volunteer REGISTRATION FORM</CardTitle>
@@ -125,19 +173,22 @@ export default function VolunteerRegistrationForm() {
                         {/* Top Level Fields */}
                         <div className="space-y-4">
                             <div className="flex flex-col items-center justify-center space-y-4">
-                                {/* Profile Photo Circle */}
                                 <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center">
-                                     <User className="text-gray-500" />
+                                    <User className="text-gray-500" />
                                 </div>
 
-                                {/* Upload Button */}
-                                <button
-                                    type="button"
-                                    className="border border-gray-300 px-3 py-2 rounded-lg flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors"
-                                >
-                                    <Upload size={15} />
-                                    <span className="text-sm">Upload Image</span>
-                                </button>
+                                {/* Profile Upload Button */}
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleProfilePhotoChange}
+                                    className="hidden"
+                                    id="profile-photo"
+                                />
+                                <label htmlFor="profile-photo" className="cursor-pointer text-sm text-gray-600">
+                                    Upload Image
+                                </label>
+                                {formData.profilePhoto && <span>{formData.profilePhoto.name}</span>}
                             </div>
                         </div>
 
@@ -453,7 +504,7 @@ export default function VolunteerRegistrationForm() {
                                 <div className="flex items-center space-x-2">
                                     <Checkbox
                                         id="contentWriting"
-                                        checked={formData.hobbies.contentWriting}
+                                        checked={formData.hobbies?.contentWriting ?? false}
                                         onCheckedChange={(checked) => handleHobbyChange("contentWriting", checked as boolean)}
                                         className="data-[state=checked]:bg-[#007466] data-[state=checked]:border-[#007466]"
                                     />
@@ -465,7 +516,7 @@ export default function VolunteerRegistrationForm() {
                                 <div className="flex items-center space-x-2">
                                     <Checkbox
                                         id="socialMedia"
-                                        checked={formData.hobbies.socialMedia}
+                                        checked={formData.hobbies?.socialMedia ?? false}
                                         onCheckedChange={(checked) => handleHobbyChange("socialMedia", checked as boolean)}
                                         className="data-[state=checked]:bg-[#007466] data-[state=checked]:border-[#007466]"
                                     />
@@ -477,7 +528,7 @@ export default function VolunteerRegistrationForm() {
                                 <div className="flex items-center space-x-2">
                                     <Checkbox
                                         id="fundRaising"
-                                        checked={formData.hobbies.fundRaising}
+                                        checked={formData.hobbies?.fundRaising ?? false}
                                         onCheckedChange={(checked) => handleHobbyChange("fundRaising", checked as boolean)}
                                         className="data-[state=checked]:bg-[#007466] data-[state=checked]:border-[#007466]"
                                     />
@@ -489,7 +540,7 @@ export default function VolunteerRegistrationForm() {
                                 <div className="flex items-center space-x-2">
                                     <Checkbox
                                         id="voiceOver"
-                                        checked={formData.hobbies.voiceOver}
+                                        checked={formData.hobbies?.voiceOver ?? false}
                                         onCheckedChange={(checked) => handleHobbyChange("voiceOver", checked as boolean)}
                                         className="data-[state=checked]:bg-[#007466] data-[state=checked]:border-[#007466]"
                                     />
@@ -503,7 +554,7 @@ export default function VolunteerRegistrationForm() {
                                 <div className="flex items-center space-x-2">
                                     <Checkbox
                                         id="teacher-training"
-                                        checked={formData.hobbies.teacherTraining}
+                                        checked={formData.hobbies?.teacherTraining ?? false}
                                         onCheckedChange={(checked) => handleHobbyChange("teacherTraining", checked as boolean)}
                                         className="data-[state=checked]:bg-[#007466] data-[state=checked]:border-[#007466]"
                                     />
@@ -511,6 +562,16 @@ export default function VolunteerRegistrationForm() {
                                         Teacher Training
                                     </Label>
                                 </div>
+                            </div>
+                            <div className="pt-4">
+                                <Input
+                                    id="otherHobby"
+                                    type="text"
+                                    value={formData.hobbies!.otherHobby}
+                                    onChange={(e) => handleHobbyChange("otherHobby", e.target.value)}
+                                    className="w-full rounded-full border-none bg-gray-100"
+                                    placeholder="Other"
+                                />
                             </div>
                         </div>
 
