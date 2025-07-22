@@ -59,8 +59,10 @@ export default function SignInForm() {
         const userRole = response?.data?.role
         if (userRole === 'admin') {
           router.push("/dashboard") 
+          console.log('admin')
         } else {
           router.push("/home") 
+          console.log('admin')
         }
         setToastType('success')
         setToastMessage('Login successful')
@@ -80,7 +82,7 @@ export default function SignInForm() {
       setToastMessage("An error occurred while logging in.")
       setShowToast(true)
     } finally {
-      setIsLoading(false)  // Stop loader
+      setIsLoading(false) 
     }
   }
 
